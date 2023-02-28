@@ -29,11 +29,37 @@ def handle(client):
                 if nicknames[clients.index(client)] == 'admin':
                     name_to_ban = msg.decode('ascii')[4:]
                     kick_user(name_to_ban)
-                    with open('bans.txt', 'a') as f:
-                        f.write(f'{name_to_ban}\n')
-                    print(f'{name_to_ban} was banned!')
+                    # check if user is already banned or not
+                    # if yes, then display a message that he is already banned
+                    # if not, then ban him
+                    with open('bans.txt', 'r') as f:
+                        bans = f.readlines()
+                        if is_ban(name_to_ban):
+                            client.send(f'{name_to_ban} is already banned!'.encode('ascii'))
+                        else:
+                            with open('bans.txt', 'a') as f:
+                                f.write(f'{name_to_ban}\n')
                 else:
                     client.send('Command was refused!'.encode('ascii'))
+            elif msg.decode('ascii').startswith('UNBAN'):
+                if nicknames[clients.index(client)] == 'admin':
+                    name_to_unban = msg.decode('ascii')[6:]
+                    with open('bans.txt', 'a+') as f:
+                        bans = f.readlines()
+                        for ban in bans:
+                            if ban.rstrip('\n') != name_to_unban:
+                                f.write(ban)
+                    print(f'{name_to_unban} was unbanned!')
+                else:
+                    client.send('Command was refused!'.encode('ascii'))
+            elif msg.decode('ascii').startswith('LEAVE'):
+                name = msg.decode('ascii')[6:]
+                index = nicknames.index(name)
+                clients.remove(clients[index])
+                nicknames.remove(name)
+                broadcast(f'{name} left the chat!'.encode('ascii'))
+                client.close()
+                break
             else:
                 broadcast(message)
         except:
@@ -56,11 +82,11 @@ def receive():
         with open('bans.txt', 'r') as f:
             bans = f.readlines()
 
-        if f'{nickname}\n' in bans:
+        # check if the user is banned
+        if is_ban(nickname):
             client.send('BAN'.encode('ascii'))
             client.close()
             continue
-
 
         if nickname == 'admin':
             client.send('PASS'.encode('ascii'))
@@ -86,11 +112,22 @@ def kick_user(name):
         name_index = nicknames.index(name)
         client_to_kick = clients[name_index]
         clients.remove(client_to_kick)
+        client_to_kick.send('You were kicked by the admin!'.encode('ascii'))
         client_to_kick.close()
         nicknames.remove(name)
         broadcast(f'{name} was kicked by the admin!'.encode('ascii'))
     else:
         print("No user with that name!")
+
+def is_ban(name):
+    with open('bans.txt', 'r') as f:
+        bans = f.readlines()
+
+    for ban in bans:
+        if name == ban.rstrip('\n'):
+            return True
+    return False
+
 
 print("Server is listening...")
 receive()
