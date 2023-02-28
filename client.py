@@ -49,25 +49,28 @@ def write():
             if message[len(nickname)+2:].startswith('/users'):
                 client.send('USERS'.encode('ascii'))
             # command to leave the chat
-            if message[len(nickname)+2:].startswith('/leave'):
+            elif message[len(nickname)+2:].startswith('/leave'):
                 client.send(f'LEAVE {nickname}'.encode('ascii'))
                 client.close()
                 break
-            if nickname == 'admin':
+            # command to get list of available commands
+            elif message[len(nickname)+2:].startswith('/help'):
+                client.send('HELP'.encode('ascii'))
+            elif nickname == 'admin':
                 # command to get name of all users
                 if message[len(nickname)+2:].startswith('/names'):
                     client.send('NAMES'.encode('ascii'))
                 # command to get list of banned users
-                elif message[len(nickname)+2:].startswith('/bans'):
-                    client.send('BANNED'.encode('ascii'))
+                elif message[len(nickname)+2:].startswith('/listban'):
+                    client.send('LISTBAN'.encode('ascii'))
                 # command to kick a user
-                elif message[len(nickname)+2:].startswith('/kick'):
+                elif message[len(nickname)+2:].startswith('/kick '):
                     client.send(f'KICK {message[len(nickname)+8:]}'.encode('ascii'))
                 # command to ban a user
-                elif message[len(nickname)+2:].startswith('/ban'):
+                elif message[len(nickname)+2:].startswith('/ban '):
                     client.send(f'BAN {message[len(nickname)+7:]}'.encode('ascii'))
                 # command to unban a user
-                elif message[len(nickname)+2:].startswith('/unban'):
+                elif message[len(nickname)+2:].startswith('/unban '):
                     client.send(f'UNBAN {message[len(nickname)+9:]}'.encode('ascii'))
                 # command to close the server
                 elif message[len(nickname)+2:].startswith('/close'):
