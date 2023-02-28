@@ -5,8 +5,8 @@ nickname = input("Choose your nickname: ")
 if nickname == 'admin':
     password = input("Enter the password for admin: ")
 
-host = '127.0.0.1'
-port = 55555
+host = '20.251.40.123'
+port = 56789
 
 client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 client.connect((host, port))

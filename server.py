@@ -1,8 +1,8 @@
 import threading
 import socket
 
-host = '127.0.0.1' # localhost
-port = 55555
+host = '0.0.0.0'
+port = 56789
 
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server.bind((host, port))
@@ -19,6 +19,8 @@ def handle(client):
     while True:
         try:
             msg = message = client.recv(1024)
+
+            ##### General Commands #####
 
             # command to get no. of users
             if msg.decode('ascii').startswith('USERS'):
@@ -39,11 +41,19 @@ def handle(client):
                 client.close()
                 break
                         
-            
+            ##### Admin Commands #####
+
             # command to get names of all users
             elif msg.decode('ascii').startswith('NAMES'):
                 if nicknames[clients.index(client)] == 'admin':
                     client.send(f'Connected users: {", ".join(nicknames)}'.encode('ascii'))
+                else:
+                    client.send('Command was refused!'.encode('ascii'))
+            # command to kick a user
+            elif msg.decode('ascii').startswith('KICK'):
+                if nicknames[clients.index(client)] == 'admin':
+                    name_to_kick = msg.decode('ascii')[5:]
+                    kick_user(name_to_kick)
                 else:
                     client.send('Command was refused!'.encode('ascii'))
             # command to ban a user
@@ -58,6 +68,7 @@ def handle(client):
                         else:
                             with open('bans.txt', 'a') as f:
                                 f.write(f'{name_to_ban}\n')
+                            client.send(f'{name_to_ban} has been banned from the server'.encode('ascii'))
                 else:
                     client.send('Command was refused!'.encode('ascii'))
             # command to get list of banned users
@@ -65,29 +76,33 @@ def handle(client):
                 if nicknames[clients.index(client)] == 'admin':
                     with open('bans.txt', 'r') as f:
                         bans = f.readlines()
-                        client.send(('Banned users: \n\n'+"".join(bans)).encode('ascii'))
+                        if len(bans) != 0:
+                            client.send(('Banned users: \n\n'+"".join(bans)).encode('ascii'))
+                        else:
+                            client.send(f'No one is banned currently!!!'.encode('ascii'))
             # command to unban a user
             elif msg.decode('ascii').startswith('UNBAN'):
                 if nicknames[clients.index(client)] == 'admin':
                     name_to_unban = msg.decode('ascii')[6:]
                     with open('bans.txt', 'r') as f:
                         bans = f.readlines()
-                        if is_ban(name_to_unban):
-                            with open('bans.txt', 'w') as f:
-                                for ban in bans:
-                                    if ban.strip('\n') != name_to_unban:
-                                        f.write(ban)
+                        if len(bans) != 0:
+                            if name_to_unban == '*':
+                                with open('bans.txt', 'w') as f:
+                                    f.write('')
+                                print(f'Banned List was reset!')
+                                client.send(f'Banned List is now empty!'.encode('ascii'))
+                            elif is_ban(name_to_unban):
+                                with open('bans.txt', 'w') as f:
+                                    for ban in bans:
+                                        if ban.strip('\n') != name_to_unban:
+                                            f.write(ban)
+                                print(f'{name_to_unban} was unbanned!')
+                                client.send(f'{name_to_unban} unbanned successfully!'.encode('ascii'))
+                            else:
+                                client.send(f'{name_to_unban} is not banned!'.encode('ascii'))
                         else:
-                            client.send(f'{name_to_unban} is not banned!'.encode('ascii'))
-
-                    print(f'{name_to_unban} was unbanned!')
-                else:
-                    client.send('Command was refused!'.encode('ascii'))
-            # command to kick a user
-            elif msg.decode('ascii').startswith('KICK'):
-                if nicknames[clients.index(client)] == 'admin':
-                    name_to_kick = msg.decode('ascii')[5:]
-                    kick_user(name_to_kick)
+                            client.send('No one is banned currently')
                 else:
                     client.send('Command was refused!'.encode('ascii'))
             # command to close the server
@@ -116,9 +131,6 @@ def receive():
 
         client.send('NICK'.encode('ascii'))
         nickname = client.recv(1024).decode('ascii')
-
-        with open('bans.txt', 'r') as f:
-            bans = f.readlines()
 
         if is_ban(nickname):
             client.send('BAN'.encode('ascii'))
@@ -154,7 +166,7 @@ def kick_user(name):
         nicknames.remove(name)
         broadcast(f'{name} was kicked by the admin!'.encode('ascii'))
     else:
-        print("No user with that name!")
+        print(name + " is not connected to the server!")
 
 def is_ban(name):
     with open('bans.txt', 'r') as f:
