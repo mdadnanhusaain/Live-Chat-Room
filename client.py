@@ -2,6 +2,8 @@ import socket
 import threading
 
 nickname = input("Choose your nickname: ")
+if nickname == 'admin':
+    password = input("Enter the password for admin: ")
 
 host = '20.204.141.183'
 port = 56789
@@ -9,12 +11,32 @@ port = 56789
 client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 client.connect((host, port))
 
+stop_thread = False
+
 def receive():
     while True:
+        global stop_thread
+        if stop_thread:
+            break
         try:
             message = client.recv(1024).decode('ascii')
             if message == 'NICK':
                 client.send(nickname.encode('ascii'))
+                next_message = client.recv(1024).decode('ascii')
+                if nickname == 'admin':
+                    if next_message == 'PASS':
+                        client.send(password.encode('ascii'))
+                        if client.recv(1024).decode('ascii') == 'REFUSE':
+                            print("Connection was refused! Incorrect password!")
+                            stop_thread = True
+                        else:
+                            print("Connection was refused! Incorrect password!")
+                            client.close()
+                            break
+                    elif next_message == 'BAN':
+                        print("Connection was refused! You are banned!")
+                        client.close()
+                        stop_thread = True
             else:
                 print(message)
         except:
@@ -24,8 +46,21 @@ def receive():
 
 def write():
     while True:
+        if stop_thread:
+            break
         message = f'{nickname}: {input("")}'
-        client.send(message.encode('ascii'))
+        if message[len(nickname)+2:].startswith('/'):
+            if nickname == 'admin':
+                if message[len(nickname)+2:].startswith('/kick'):
+                    client.send(f'KICK {message[len(nickname)+7:]}'.encode('ascii'))
+                elif message[len(nickname)+2:].startswith('/ban'):
+                    client.send(f'BAN {message[len(nickname)+6:]}'.encode('ascii'))
+                else:
+                    print("Command not found!")
+            else:
+                print("Commands can only be used by admin!")
+        else:
+            client.send(message.encode('ascii'))
 
 receive_thread = threading.Thread(target=receive)
 receive_thread.start()
