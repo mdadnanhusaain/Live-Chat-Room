@@ -45,17 +45,34 @@ def write():
             break
         message = f'{nickname}: {input("")}'
         if message[len(nickname)+2:].startswith('/'):
+            # command to get no. of users
+            if message[len(nickname)+2:].startswith('/users'):
+                client.send('USERS'.encode('ascii'))
+            # command to leave the chat
             if message[len(nickname)+2:].startswith('/leave'):
                 client.send(f'LEAVE {nickname}'.encode('ascii'))
                 client.close()
                 break
             if nickname == 'admin':
-                if message[len(nickname)+2:].startswith('/kick'):
+                # command to get name of all users
+                if message[len(nickname)+2:].startswith('/names'):
+                    client.send('NAMES'.encode('ascii'))
+                # command to get list of banned users
+                elif message[len(nickname)+2:].startswith('/bans'):
+                    client.send('BANNED'.encode('ascii'))
+                # command to kick a user
+                elif message[len(nickname)+2:].startswith('/kick'):
                     client.send(f'KICK {message[len(nickname)+8:]}'.encode('ascii'))
+                # command to ban a user
                 elif message[len(nickname)+2:].startswith('/ban'):
                     client.send(f'BAN {message[len(nickname)+7:]}'.encode('ascii'))
+                # command to unban a user
                 elif message[len(nickname)+2:].startswith('/unban'):
                     client.send(f'UNBAN {message[len(nickname)+9:]}'.encode('ascii'))
+                # command to close the server
+                elif message[len(nickname)+2:].startswith('/close'):
+                    client.send('CLOSE'.encode('ascii'))
+                    break
                 else:
                     print("Command not found!")
             else:
