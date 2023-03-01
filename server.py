@@ -104,22 +104,30 @@ def handle(client):
                             client.send('No one is banned currently')
                 else:
                     client.send('Command was refused!'.encode('ascii'))
+            
+                                                                        # elif msg.decode('ascii').startswith('CLOSE'):
+                                                                        #     if nicknames[clients.index(client)] == 'admin':
+                                                                        #         broadcast('Server is shutting down!'.encode('ascii'))
+                                                                        #         # pause the server for 5 seconds
+                                                                        #         time.sleep(5)
+                                                                        #         # also use leave_chat() to remove all users from the chat
+                                                                        #         for i in range(len(clients)):
+                                                                        #             leave_chat(clients[i], i)                    
+                                                                        #         server.close()
+                                                                        #         break                    
+                                                                        #     else:
+                                                                        #         client.send('Command was refused!'.encode('ascii'))
             # command to close the server
             elif msg.decode('ascii').startswith('CLOSE'):
                 if nicknames[clients.index(client)] == 'admin':
+                    name = msg.decode('ascii')[6:]
+                    index = nicknames.index(name)
                     broadcast('Server is shutting down!'.encode('ascii'))
-                    # pause the server for 5 seconds
                     time.sleep(5)
-                    # also use leave_chat() to remove all users from the chat
-                    for c in clients:
-                        if c != client:
-                            index = clients.index(c)
-                            leave_chat(c, index)
-                    client.close()
-                    clients.remove(client)
-                    nicknames.remove('admin')
-                    server.close()
-                    break                    
+                    for i in range(len(clients)):
+                        if(i != index):
+                            leave_chat(clients[i], i)
+                    break
                 else:
                     client.send('Command was refused!'.encode('ascii'))
             else:

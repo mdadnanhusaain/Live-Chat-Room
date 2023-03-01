@@ -74,7 +74,9 @@ def write():
                     client.send(f'UNBAN {message[len(nickname)+9:]}'.encode('ascii'))
                 # command to close the server
                 elif message[len(nickname)+2:].startswith('/close'):
-                    client.send('CLOSE'.encode('ascii'))
+                    client.send(f'CLOSE {nickname}'.encode('ascii'))
+                    client.send(f'LEAVE {nickname}'.encode('ascii'))
+                    client.close()
                     break
                 else:
                     print("Command not found!")
