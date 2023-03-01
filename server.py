@@ -109,6 +109,8 @@ def handle(client):
             elif msg.decode('ascii').startswith('CLOSE'):
                 if nicknames[clients.index(client)] == 'admin':
                     broadcast('Server is shutting down!'.encode('ascii'))
+                    # close all clients after 5 seconds
+                    threading.Timer(5.0, close_clients).start() 
                     server.close()
                     break
                 else:
@@ -175,6 +177,9 @@ def is_ban(name):
             return True
     return False
 
+def close_clients():
+    for client in clients:
+        client.close()
 
 print("Server is listening...")
 receive()
