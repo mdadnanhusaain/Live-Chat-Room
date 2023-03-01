@@ -115,9 +115,9 @@ def handle(client):
                         if c != client:
                             index = clients.index(c)
                             leave_chat(c, index)
+                    client.close()
                     clients.remove(client)
                     nicknames.remove('admin')
-                    client.close()
                     server.close()
                     break                    
                 else:
