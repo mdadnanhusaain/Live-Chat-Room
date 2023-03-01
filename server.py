@@ -111,9 +111,13 @@ def handle(client):
                     # pause the server for 5 seconds
                     time.sleep(5)
                     # also use leave_chat() to remove all users from the chat
-                    for client in clients:
-                        index = clients.index(client)
-                        leave_chat(client, index)
+                    for c in clients:
+                        if c != client:
+                            index = clients.index(c)
+                            leave_chat(c, index)
+                    clients.remove(client)
+                    nicknames.remove('admin')
+                    client.close()
                     server.close()
                     break                    
                 else:
