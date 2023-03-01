@@ -1,5 +1,6 @@
 import threading
 import socket
+import time
 
 host = '0.0.0.0'
 port = 56789
@@ -35,10 +36,8 @@ def handle(client):
             elif msg.decode('ascii').startswith('LEAVE'):
                 name = msg.decode('ascii')[6:]
                 index = nicknames.index(name)
-                clients.remove(clients[index])
-                nicknames.remove(name)
+                leave_chat(client, index)
                 broadcast(f'{name} left the chat!'.encode('ascii'))
-                client.close()
                 break
                         
             ##### Admin Commands #####
@@ -109,10 +108,14 @@ def handle(client):
             elif msg.decode('ascii').startswith('CLOSE'):
                 if nicknames[clients.index(client)] == 'admin':
                     broadcast('Server is shutting down!'.encode('ascii'))
-                    # close all clients after 5 seconds
-                    threading.Timer(5.0, close_clients).start() 
+                    # pause the server for 5 seconds
+                    time.sleep(5)
+                    # also use leave_chat() to remove all users from the chat
+                    for client in clients:
+                        index = clients.index(client)
+                        leave_chat(client, index)
                     server.close()
-                    break
+                    break                    
                 else:
                     client.send('Command was refused!'.encode('ascii'))
             else:
@@ -177,9 +180,11 @@ def is_ban(name):
             return True
     return False
 
-def close_clients():
-    for client in clients:
-        client.close()
+def leave_chat(client, index):
+    clients.remove(clients[index])
+    nicknames.remove(nicknames[index])
+    client.close()
+
 
 print("Server is listening...")
 receive()
