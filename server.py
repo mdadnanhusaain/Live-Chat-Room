@@ -46,7 +46,6 @@ def handle(client):
             # command to start the server
             elif msg.decode('ascii').startswith('START'):
                 if nicknames[clients.index(client)] == 'admin':
-                    global running
                     running = True
                     client.send('Server started!'.encode('ascii'))
                 else:
@@ -241,4 +240,5 @@ def close_server():
     print("Server is closed!")
 
 print("Server is listening...")
+running = True
 receive()
