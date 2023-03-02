@@ -21,7 +21,7 @@ def handle(client):
     global running
     while True:
         try:
-            msg = message = client.recv(1024)
+            msg = client.recv(1024)
 
             ##### General Commands #####
 
@@ -134,12 +134,11 @@ def handle(client):
                         if cl != client:
                             cl.close()
                     client.send('Server closed!'.encode('ascii'))
-                    client.send('NAMES'.encode('ascii'))
                     break
                 else:
                     client.send('Command was refused!'.encode('ascii'))
             else:
-                broadcast(message)
+                broadcast(msg)
         except:
             index = clients.index(client)
             clients.remove(client)
