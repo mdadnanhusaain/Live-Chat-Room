@@ -26,12 +26,16 @@ def receive():
                 if next_message == 'PASS':
                     client.send(password.encode('ascii'))
                     if client.recv(1024).decode('ascii') == 'REFUSE':
-                        print("Connection was refused! Incorrect password!")
+                        print("Connection was refused!")
                         stop_thread = True
                 elif next_message == 'BAN':
                     print("Connection was refused! You are banned! Press Enter to exit...")
                     client.close()
                     stop_thread = True
+            elif message == 'REFUSE':
+                print("Connection was refused! Press Enter to exit...")
+                client.close()
+                stop_thread = True
             else:
                 print(message)
         except:
@@ -57,6 +61,9 @@ def write():
             elif message[len(nickname)+2:].startswith('/help'):
                 client.send('HELP'.encode('ascii'))
             elif nickname == 'admin':
+                # command to start the server
+                if message[len(nickname)+2:].startswith('/start'):
+                    client.send('START'.encode('ascii'))
                 # command to get name of all users
                 if message[len(nickname)+2:].startswith('/names'):
                     client.send('NAMES'.encode('ascii'))
@@ -75,9 +82,6 @@ def write():
                 # command to close the server
                 elif message[len(nickname)+2:].startswith('/close'):
                     client.send(f'CLOSE {nickname}'.encode('ascii'))
-                    client.send(f'LEAVE {nickname}'.encode('ascii'))
-                    client.close()
-                    break
                 else:
                     print("Command not found!")
             else:

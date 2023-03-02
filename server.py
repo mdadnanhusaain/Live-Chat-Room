@@ -11,6 +11,7 @@ server.listen()
 
 clients = []
 nicknames = []
+running = True
 
 def broadcast(message):
     for client in clients:
@@ -39,13 +40,31 @@ def handle(client):
                 leave_chat(client, index)
                 broadcast(f'{name} left the chat!'.encode('ascii'))
                 break
-                        
+
             ##### Admin Commands #####
 
+            # command to start the server
+            elif msg.decode('ascii').startswith('START'):
+                if nicknames[clients.index(client)] == 'admin':
+                    global running
+                    running = True
+                    client.send('Server started!'.encode('ascii'))
+                else:
+                    client.send('Command was refused!'.encode('ascii'))
             # command to get names of all users
             elif msg.decode('ascii').startswith('NAMES'):
                 if nicknames[clients.index(client)] == 'admin':
                     client.send(f'Connected users: {", ".join(nicknames)}'.encode('ascii'))
+                else:
+                    client.send('Command was refused!'.encode('ascii'))
+            # command to send message to client by admin if he is banned
+            elif msg.decode('ascii').startswith('ISBAN'):
+                if nicknames[clients.index(client)] == 'admin':
+                    name = msg.decode('ascii')[6:]
+                    if is_ban(name):
+                        client.send(f'{name} is banned!'.encode('ascii'))
+                    else:
+                        client.send(f'{name} is not banned!'.encode('ascii'))
                 else:
                     client.send('Command was refused!'.encode('ascii'))
             # command to kick a user
@@ -104,29 +123,19 @@ def handle(client):
                             client.send('No one is banned currently')
                 else:
                     client.send('Command was refused!'.encode('ascii'))
-            
-                                                                        # elif msg.decode('ascii').startswith('CLOSE'):
-                                                                        #     if nicknames[clients.index(client)] == 'admin':
-                                                                        #         broadcast('Server is shutting down!'.encode('ascii'))
-                                                                        #         # pause the server for 5 seconds
-                                                                        #         time.sleep(5)
-                                                                        #         # also use leave_chat() to remove all users from the chat
-                                                                        #         for i in range(len(clients)):
-                                                                        #             leave_chat(clients[i], i)                    
-                                                                        #         server.close()
-                                                                        #         break                    
-                                                                        #     else:
-                                                                        #         client.send('Command was refused!'.encode('ascii'))
+
             # command to close the server
             elif msg.decode('ascii').startswith('CLOSE'):
                 if nicknames[clients.index(client)] == 'admin':
-                    name = msg.decode('ascii')[6:]
-                    index = nicknames.index(name)
-                    broadcast('Server is shutting down!'.encode('ascii'))
+                    global running
+                    running = False
+                    client.send('Server closed!'.encode('ascii'))
+                    broadcast('Server is closing!'.encode('ascii'))
                     time.sleep(5)
-                    for i in range(len(clients)):
-                        if(i != index):
-                            leave_chat(clients[i], i)
+                    for client in clients:
+                        client.close()
+                    server.close()
+                    print('Server closed!')
                     break
                 else:
                     client.send('Command was refused!'.encode('ascii'))
@@ -148,11 +157,6 @@ def receive():
         client.send('NICK'.encode('ascii'))
         nickname = client.recv(1024).decode('ascii')
 
-        if is_ban(nickname):
-            client.send('BAN'.encode('ascii'))
-            client.close()
-            continue
-
         if nickname == 'admin':
             client.send('PASS'.encode('ascii'))
             password = client.recv(1024).decode('ascii')
@@ -162,15 +166,47 @@ def receive():
                 client.close()
                 continue
 
-        nicknames.append(nickname)
-        clients.append(client)
+        if running:
+            # check if client is banned
+            # send message to client if banned and close connection
+            if is_ban(nickname):
+                client.send('ISBAN'.encode('ascii'))
+                client.close()
+                continue
 
-        print(f"Nickname of the client is {nickname}!")
-        broadcast(f"{nickname} joined the chat!".encode('ascii'))
-        client.send('Connected to the server!'.encode('ascii'))
+            nicknames.append(nickname)
+            clients.append(client)
 
-        thread = threading.Thread(target=handle, args=(client,))
-        thread.start()
+            print(f"Nickname of the client is {nickname}!")
+            broadcast(f"{nickname} joined the chat!".encode('ascii'))
+            client.send('Connected to the server!'.encode('ascii'))
+
+            thread = threading.Thread(target=handle, args=(client,))
+            thread.start()
+        else:
+            if nickname == 'admin':
+                client.send(f'Do you want to start the server? (Y/N)'.encode('ascii'))
+                answer = client.recv(1024).decode('ascii')
+                if answer.startswith('Y') or answer.startswith('y'):
+                    running = True
+                    nicknames.append(nickname)
+                    clients.append(client)
+
+                    print(f"Nickname of the client is {nickname}!")
+                    broadcast(f"{nickname} joined the chat!".encode('ascii'))
+                    client.send('Connected to the server!'.encode('ascii'))
+
+                    thread = threading.Thread(target=handle, args=(client,))
+                    thread.start()
+                else:
+                    client.send('REFUSE'.encode('ascii'))
+                    client.close()
+                    continue
+            else:
+                client.send(f'Server is closed! Please contact Admin'.encode('ascii'))
+                client.send('REFUSE'.encode('ascii'))
+                client.close()
+                continue
 
 def kick_user(name):
     if name in nicknames:
@@ -197,6 +233,14 @@ def leave_chat(client, index):
     nicknames.remove(nicknames[index])
     client.close()
 
+def close_server():
+    global running
+    running = False
+    for client in clients:
+        client.send('Server is closing!'.encode('ascii'))
+        client.close()
+    server.close()
+    print("Server is closed!")
 
 print("Server is listening...")
 receive()
