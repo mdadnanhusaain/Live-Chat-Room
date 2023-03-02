@@ -127,7 +127,6 @@ def handle(client):
             # command to close the server
             elif msg.decode('ascii').startswith('CLOSE'):
                 if nicknames[clients.index(client)] == 'admin':
-                    global running
                     running = False
                     client.send('Server closed!'.encode('ascii'))
                     broadcast('Server is closing!'.encode('ascii'))
@@ -234,7 +233,6 @@ def leave_chat(client, index):
     client.close()
 
 def close_server():
-    global running
     running = False
     for client in clients:
         client.send('Server is closing!'.encode('ascii'))
