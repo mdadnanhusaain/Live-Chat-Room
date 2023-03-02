@@ -239,7 +239,6 @@ def close_server():
     for client in clients:
         client.send('Server is closing!'.encode('ascii'))
         client.close()
-    server.close()
     print("Server is closed!")
 
 print("Server is listening...")
