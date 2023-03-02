@@ -128,11 +128,13 @@ def handle(client):
             elif msg.decode('ascii').startswith('CLOSE'):
                 if nicknames[clients.index(client)] == 'admin':
                     running = False
-                    client.send('Server closed!'.encode('ascii'))
                     broadcast('Server is closing!'.encode('ascii'))
                     time.sleep(5)
-                    for client in clients:
-                        client.close()
+                    for cl in clients:
+                        if cl != client:
+                            cl.close()
+                    client.send('Server closed!'.encode('ascii'))
+                    client.send('NAMES'.encode('ascii'))
                     break
                 else:
                     client.send('Command was refused!'.encode('ascii'))
@@ -168,7 +170,7 @@ def receive():
             # check if client is banned
             # send message to client if banned and close connection
             if is_ban(nickname):
-                client.send('ISBAN'.encode('ascii'))
+                client.send(f'ISBAN {nickname}'.encode('ascii'))
                 client.close()
                 continue
 
@@ -230,15 +232,6 @@ def leave_chat(client, index):
     clients.remove(clients[index])
     nicknames.remove(nicknames[index])
     client.close()
-
-def close_server():
-    global running
-    running = False
-    for client in clients:
-        client.send('Server is closing!'.encode('ascii'))
-        client.close()
-    print('Server closed!')
-    print("Server is closed!")
 
 print("Server is listening...")
 receive()
