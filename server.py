@@ -18,6 +18,7 @@ def broadcast(message):
         client.send(message)
 
 def handle(client):
+    global running
     while True:
         try:
             msg = message = client.recv(1024)
@@ -149,6 +150,7 @@ def handle(client):
             break
 
 def receive():
+    global running
     while True:
         client, address = server.accept()
         print(f"Connected with {str(address)}")
@@ -232,6 +234,7 @@ def leave_chat(client, index):
     client.close()
 
 def close_server():
+    global running
     running = False
     for client in clients:
         client.send('Server is closing!'.encode('ascii'))
@@ -240,5 +243,4 @@ def close_server():
     print("Server is closed!")
 
 print("Server is listening...")
-running = True
 receive()
