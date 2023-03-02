@@ -133,8 +133,6 @@ def handle(client):
                     time.sleep(5)
                     for client in clients:
                         client.close()
-                    server.close()
-                    print('Server closed!')
                     break
                 else:
                     client.send('Command was refused!'.encode('ascii'))
@@ -239,6 +237,7 @@ def close_server():
     for client in clients:
         client.send('Server is closing!'.encode('ascii'))
         client.close()
+    print('Server closed!')
     print("Server is closed!")
 
 print("Server is listening...")
